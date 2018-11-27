@@ -4,19 +4,21 @@ public:
 		if(this->data == 0x00 && data == 0xff) {
 			idx = 0;
 			rcvd = 1;
+			ready = 0;
+			this->data = data;
+			return;
 		}
-		this->data = data;
 		if(rcvd > 0) {
 			buf[idx] = data;
-			idx++;
 		} else {
+			this->data = data;
 			return;
 		}
 		if(idx == 0) {
 			num = data >> 4;
 			permit = (data & 0x04) >> 2;
 			motor = (data & 0x01);
-			if(data & 0x02) {
+			if(data & 0x02 > 0) {
 				motor *= -1;
 			}
 		}
@@ -32,18 +34,21 @@ public:
 			angle2 = buf[4];
 			angle2 <<= 8;
 			angle2 |= buf[5];
+			ready = 1;
+			rcvd = 0;
 		}
+		idx++;
+		this->data = data;
 	};
 	uint8_t* createPacket(uint8_t* length) {
-		uint8_t len = 0;
 		packet[0] = 0x00;
 		packet[1] = 0xff;
-		uint8_t ms;
+		uint8_t ms = 0;
 		if((motor & 0x7f) > 0) {
 			ms = 1;
 		}
-		if((motor & 0x80) > 0) {
-			ms |= 0x20;
+		if(motor < 0) {
+			ms |= 0x02;
 		}
 		packet[2] = (num << 4) | (permit << 2) | ms;
 		packet[3] = power;
@@ -51,12 +56,17 @@ public:
 		packet[5] = (uint8_t)angle1;
 		packet[6] = (uint8_t)(angle2 >> 8);
 		packet[7] = (uint8_t)angle2;
-	}
+		*length = 8;
+		return packet;
+	};
 	bool isReady() {
 		return ready;
-	}
+	};
 	bool isPermit() {
 		return permit;
+	};
+	uint8_t getNumber() {
+		return num;
 	};
 	int16_t getAngle1() {
 		return angle1;
