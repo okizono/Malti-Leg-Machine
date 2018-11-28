@@ -18,8 +18,8 @@ public:
 			num = data >> 4;
 			permit = (data & 0x04) >> 2;
 			motor = (data & 0x01);
-			if(data & 0x02 > 0) {
-				motor *= -1;
+			if((data & 0x02) > 0) {
+				motor = -1;
 			}
 		}
 		if(idx == 1) {
@@ -34,6 +34,9 @@ public:
 			angle2 = buf[4];
 			angle2 <<= 8;
 			angle2 |= buf[5];
+		}
+		if(idx == 6){
+			heartbeat = buf[6];
 			ready = 1;
 			rcvd = 0;
 		}
@@ -56,7 +59,8 @@ public:
 		packet[5] = (uint8_t)angle1;
 		packet[6] = (uint8_t)(angle2 >> 8);
 		packet[7] = (uint8_t)angle2;
-		*length = 8;
+		packet[8] = (uint8_t)heartbeat;
+		*length = 9;
 		return packet;
 	};
 	bool isReady() {
@@ -80,6 +84,9 @@ public:
 	uint8_t getMotorPower() {
 		return power;
 	};
+	uint8_t getHeartbeat() {
+		return heartbeat;
+	}
 	uint8_t buf[10];
 	uint8_t packet[10];
 	bool permit = 0;
@@ -88,6 +95,7 @@ public:
 	int16_t angle2 = 0;
 	int8_t motor = 0;
 	uint8_t power = 0;
+	uint8_t heartbeat = 0;
 private:
 	uint8_t data;
 	uint8_t idx = 0;
@@ -96,14 +104,14 @@ private:
 } Packet;
 
 /*
- * header 16bit(0000000011111111)
- * number 8bit
- *          4bit 番号
- *          1bit なし 0
- *          1bit 返信許可
- *          2bit モータ状態
- * power  8bit モーター出力
- * angle  16bit 先頭ビットが1のときマイナス * 2
- * led    8bit LED状態
- * 
+ * header    16bit(0000000011111111)
+ * number    8bit
+ *             4bit 番号
+ *             1bit なし 0
+ *             1bit 返信許可
+ *             2bit モータ状態
+ * power     8bit モーター出力
+ * angle     16bit 先頭ビットが1のときマイナス * 2
+ * led       8bit LED状態
+ * heartbeat 8bit 足の状態
  */
